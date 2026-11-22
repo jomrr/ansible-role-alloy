@@ -1,0 +1,15 @@
+---
+# role: alloy
+# file: molecule/resources/playbooks/verify.yml
+
+- name: ALLOY | Verify the default service
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: ALLOY | Wait for Alloy to load the configuration
+      ansible.builtin.uri:
+        url: http://127.0.0.1:12345/-/ready
+      register: __alloy_ready
+      until: __alloy_ready.status == 200
+      retries: 30
+      delay: 2

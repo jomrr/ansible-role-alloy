@@ -1,0 +1,36 @@
+---
+# role: alloy
+# file: tasks/install-Debian.yml
+
+- name: ALLOY | Configure the signed Grafana APT repository
+  become: true
+  become_user: root
+  ansible.builtin.deb822_repository:
+    name: grafana
+    uris: https://apt.grafana.com
+    suites: stable
+    components: main
+    signed_by: https://apt.grafana.com/gpg.key
+    install_python_debian: true
+  register: __alloy_apt_repository
+
+- name: ALLOY | Prefer the Grafana build of Alloy
+  become: true
+  become_user: root
+  ansible.builtin.template:
+    src: apt-preferences.j2
+    dest: /etc/apt/preferences.d/grafana-alloy
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: ALLOY | Install Alloy and the kill executable used by its reload command
+  become: true
+  become_user: root
+  ansible.builtin.apt:
+    name:
+      - alloy
+      - procps
+    state: present
+    update_cache: "{{ __alloy_apt_repository.changed }}"
+    policy_rc_d: 101

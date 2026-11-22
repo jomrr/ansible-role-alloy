@@ -1,0 +1,20 @@
+---
+# role: alloy
+# file: tasks/install-Suse.yml
+
+- name: ALLOY | Configure the signed Grafana Zypper repository
+  become: true
+  become_user: root
+  community.general.zypper_repository:
+    name: grafana
+    repo: https://rpm.grafana.com
+    autorefresh: true
+    disable_gpg_check: false
+
+- name: ALLOY | Install Alloy from the Grafana Zypper repository
+  become: true
+  become_user: root
+  community.general.zypper:
+    name: alloy
+    state: present
+    extra_args: --repo grafana

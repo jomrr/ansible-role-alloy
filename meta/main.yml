@@ -1,0 +1,18 @@
+---
+# role: alloy
+# file: meta/main.yml
+
+galaxy_info:
+  author: Jonas Mauer
+  description: Install Grafana Alloy from Grafana's stable package repositories and manage its telemetry configuration.
+  galaxy_tags:
+    - alloy
+    - grafana
+    - monitoring
+    - observability
+    - telemetry
+  issue_tracker_url: https://github.com/jomrr/ansible-role-alloy/issues
+  license: MIT
+  min_ansible_version: "2.22"
+  namespace: jomrr
+  role_name: alloy

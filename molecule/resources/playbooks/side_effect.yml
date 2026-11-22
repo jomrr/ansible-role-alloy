@@ -1,0 +1,41 @@
+---
+# role: alloy
+# file: molecule/resources/playbooks/side_effect.yml
+
+- name: ALLOY | Verify a running collector adopts a new pipeline
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: ALLOY | Write a sample log entry for the new pipeline
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        content: "alloy-molecule-{{ ansible_facts.date_time.epoch }}\n"
+        dest: /var/log/alloy-molecule.log
+        mode: '0644'
+
+    - name: ALLOY | Configure a local file-to-journal pipeline
+      ansible.builtin.include_role:
+        name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+      vars:
+        alloy_config: |
+          loki.source.file "sample" {
+            targets    = [{__path__ = "/var/log/alloy-molecule.log"}]
+            forward_to = [loki.echo.sample.receiver]
+          }
+          loki.echo "sample" {}
+
+    - name: ALLOY | Wait for Alloy to emit the entry into its own journal
+      become: true
+      become_user: root
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - --unit=alloy.service
+          - --grep=alloy-molecule-{{ ansible_facts.date_time.epoch }}
+          - --no-pager
+      changed_when: false
+      register: __alloy_journal
+      until: __alloy_journal.rc == 0
+      retries: 30
+      delay: 2

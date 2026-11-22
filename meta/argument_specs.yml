@@ -1,0 +1,13 @@
+---
+# role: alloy
+# file: meta/argument_specs.yml
+
+argument_specs:
+  main:
+    short_description: Install and configure the Grafana Alloy systemd service.
+    options:
+      alloy_config:
+        type: str
+        default: prometheus.exporter.self "local" {}
+        no_log: true
+        description: Complete configuration file in native Alloy syntax.
