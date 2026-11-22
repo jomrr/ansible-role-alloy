@@ -1,0 +1,10 @@
+# Managed by ansible.
+# file: {{ template_destpath }}
+[Service]
+ProtectSystem=strict
+StateDirectory=alloy
+StateDirectoryMode=0750
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

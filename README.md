@@ -49,6 +49,7 @@ alloy_config: prometheus.exporter.self "local" {}
 ## Managed Files
 
 - `/etc/alloy/config.alloy`
+- `/etc/systemd/system/alloy.service.d/10-ansible.conf`
 
 ## Check Mode
 
@@ -58,13 +59,18 @@ package's validator, service account and systemd unit.
 ## Service Behavior
 
 The role validates the candidate file with `alloy validate` before installing it
-and reloads Alloy when it changes. Reapplying the same configuration leaves a
-running service undisturbed. The service starts on boot.
+and reloads Alloy when it changes. A change to the systemd drop-in reloads the
+unit definition and restarts Alloy to apply the new sandbox. Reapplying the same
+configuration leaves a running service undisturbed. The service starts on boot.
 
 ## Security Notes
 
 - Root owns the configuration file and the alloy group can read it. Store
   credentials supplied through inventory in Ansible Vault.
+- Alloy runs as the alloy user with a read-only system filesystem. Place
+  persistent pipeline data under `/var/lib/alloy`, its writable state directory.
+- Alloy has private temporary directories and a private device tree. It cannot
+  gain new privileges and can open only Unix, IPv4 and IPv6 sockets.
 
 ## Operational Notes
 

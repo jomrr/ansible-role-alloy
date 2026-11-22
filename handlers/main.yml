@@ -2,9 +2,10 @@
 # role: alloy
 # file: handlers/main.yml
 
-- name: ALLOY | Reload Alloy
+- name: ALLOY | Apply service changes
   become: true
   become_user: root
   ansible.builtin.systemd_service:
     name: alloy.service
-    state: reloaded
+    daemon_reload: "{{ __alloy_dropin.changed }}"
+    state: "{{ __alloy_dropin.changed | ternary('restarted', 'reloaded') }}"

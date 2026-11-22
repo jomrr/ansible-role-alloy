@@ -6,6 +6,26 @@
   hosts: all
   gather_facts: false
   tasks:
+    - name: ALLOY | Read the effective systemd service properties
+      ansible.builtin.systemd_service:
+        name: alloy.service
+        state: started
+      check_mode: true
+      register: __alloy_unit
+
+    - name: ALLOY | Verify Alloy runs under the configured sandbox
+      ansible.builtin.assert:
+        that:
+          - __alloy_unit.status.ActiveState == 'active'
+          - __alloy_unit.status.User == 'alloy'
+          - __alloy_unit.status.ProtectSystem == 'strict'
+          - __alloy_unit.status.StateDirectory == 'alloy'
+          - __alloy_unit.status.NoNewPrivileges | bool
+          - __alloy_unit.status.PrivateTmp | bool
+          - __alloy_unit.status.PrivateDevices | bool
+          - __alloy_unit.status.RestrictAddressFamilies.split() | sort == ['AF_INET', 'AF_INET6', 'AF_UNIX']
+        quiet: true
+
     - name: ALLOY | Wait for Alloy to load the configuration
       ansible.builtin.uri:
         url: http://127.0.0.1:12345/-/ready
