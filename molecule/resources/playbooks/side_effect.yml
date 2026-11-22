@@ -2,9 +2,16 @@
 # role: alloy
 # file: molecule/resources/playbooks/side_effect.yml
 
-- name: ALLOY | Verify a running collector adopts a new pipeline
+- name: ALLOY | Verify pipeline reload and reporting opt-in
   hosts: all
   gather_facts: true
+  vars:
+    alloy_config: |
+      loki.source.file "sample" {
+        targets    = [{__path__ = "/var/log/alloy-molecule.log"}]
+        forward_to = [loki.echo.sample.receiver]
+      }
+      loki.echo "sample" {}
   tasks:
     - name: ALLOY | Write a sample log entry for the new pipeline
       become: true
@@ -17,13 +24,6 @@
     - name: ALLOY | Configure a local file-to-journal pipeline
       ansible.builtin.include_role:
         name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
-      vars:
-        alloy_config: |
-          loki.source.file "sample" {
-            targets    = [{__path__ = "/var/log/alloy-molecule.log"}]
-            forward_to = [loki.echo.sample.receiver]
-          }
-          loki.echo "sample" {}
 
     - name: ALLOY | Wait for Alloy to emit the entry into its own journal
       become: true
@@ -37,5 +37,34 @@
       changed_when: false
       register: __alloy_journal
       until: __alloy_journal.rc == 0
+      retries: 30
+      delay: 2
+
+    - name: ALLOY | Opt in to anonymous usage reporting
+      ansible.builtin.include_role:
+        name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+      vars:
+        alloy_reporting_enabled: true
+
+    - name: ALLOY | Read the current service invocation
+      ansible.builtin.systemd_service:
+        name: alloy.service
+        state: started
+      check_mode: true
+      register: __alloy_opt_in_unit
+
+    - name: ALLOY | Verify the opted-in collector starts its usage reporter
+      become: true
+      become_user: root
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - --unit=alloy.service
+          - _SYSTEMD_INVOCATION_ID={{ __alloy_opt_in_unit.status.InvocationID }}
+          - --grep=running usage stats reporter
+          - --no-pager
+      changed_when: false
+      register: __alloy_reporter
+      until: __alloy_reporter.rc == 0
       retries: 30
       delay: 2

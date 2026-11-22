@@ -4,3 +4,6 @@
 
 # Complete configuration file in native Alloy syntax.
 alloy_config: 'prometheus.exporter.self "local" {}'
+
+# Send Alloy's anonymous usage statistics to Grafana Labs.
+alloy_reporting_enabled: false

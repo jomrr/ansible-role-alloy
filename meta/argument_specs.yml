@@ -11,3 +11,7 @@ argument_specs:
         default: prometheus.exporter.self "local" {}
         no_log: true
         description: Complete configuration file in native Alloy syntax.
+      alloy_reporting_enabled:
+        type: bool
+        default: false
+        description: Send Alloy's anonymous usage statistics to Grafana Labs.

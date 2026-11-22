@@ -33,3 +33,13 @@
       until: __alloy_ready.status == 200
       retries: 30
       delay: 2
+
+    - name: ALLOY | Verify the running collector has usage reporting disabled
+      ansible.builtin.command:
+        argv:
+          - grep
+          - -Fxzq
+          - --
+          - --disable-reporting
+          - /proc/{{ __alloy_unit.status.MainPID }}/cmdline
+      changed_when: false

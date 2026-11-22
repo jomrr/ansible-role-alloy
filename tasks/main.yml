@@ -48,7 +48,14 @@
     group: root
     mode: '0755'
 
-- name: ALLOY | Install the systemd sandbox
+- name: ALLOY | Identify packages using the Alloy startup wrapper
+  ansible.builtin.stat:
+    path: /usr/lib/alloy/alloy-wrapper
+    get_checksum: false
+    get_mime: false
+  register: __alloy_wrapper
+
+- name: ALLOY | Install the systemd sandbox and usage reporting policy
   become: true
   become_user: root
   ansible.builtin.template:

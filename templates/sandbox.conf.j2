@@ -1,6 +1,15 @@
 # Managed by ansible.
 # file: {{ template_destpath }}
 [Service]
+{% if not (alloy_reporting_enabled | bool) %}
+ExecStart=
+{% if __alloy_wrapper.stat.exists %}
+ExecStart=/usr/bin/env "CUSTOM_ARGS=${CUSTOM_ARGS} --disable-reporting" \
+    "OTEL_CUSTOM_ARGS=${OTEL_CUSTOM_ARGS} --disable-reporting" /usr/lib/alloy/alloy-wrapper
+{% else %}
+ExecStart=/usr/bin/alloy run $CUSTOM_ARGS --disable-reporting --storage.path=/var/lib/alloy/data $CONFIG_FILE
+{% endif %}
+{% endif %}
 ProtectSystem=strict
 StateDirectory=alloy
 StateDirectoryMode=0750

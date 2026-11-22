@@ -46,6 +46,18 @@ Default:
 alloy_config: prometheus.exporter.self "local" {}
 ```
 
+### `alloy_reporting_enabled`
+
+Type: `bool`. Required: `false`.
+
+Send Alloy's anonymous usage statistics to Grafana Labs.
+
+Default:
+
+```yaml
+alloy_reporting_enabled: false
+```
+
 ## Managed Files
 
 - `/etc/alloy/config.alloy`
@@ -65,6 +77,9 @@ configuration leaves a running service undisturbed. The service starts on boot.
 
 ## Security Notes
 
+- The role disables anonymous usage reporting with `--disable-reporting`. Set
+  `alloy_reporting_enabled: true` to opt in. Changing this setting restarts
+  Alloy.
 - Root owns the configuration file and the alloy group can read it. Store
   credentials supplied through inventory in Ansible Vault.
 - Alloy runs as the alloy user with a read-only system filesystem. Place
@@ -129,6 +144,7 @@ Replace the example URL with a Prometheus-compatible remote write endpoint.
 
 ## References
 
+- [Grafana Alloy usage statistics](https://grafana.com/docs/alloy/latest/data-collection/)
 - [Install Grafana Alloy on Linux](https://grafana.com/docs/alloy/latest/set-up/install/linux/)
 - [Alloy configuration syntax](https://grafana.com/docs/alloy/latest/get-started/configuration-syntax/)
 
