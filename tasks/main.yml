@@ -2,17 +2,8 @@
 # role: alloy
 # file: tasks/main.yml
 
-- name: ALLOY | Trust the Grafana RPM signing key
-  become: true
-  become_user: root
-  ansible.builtin.rpm_key:
-    key: https://rpm.grafana.com/gpg.key
-    fingerprint: B53AE77BADB630A683046005963FA27710458545
-    state: present
-  when: ansible_facts.os_family in ['RedHat', 'Suse']
-
-- name: ALLOY | Install the official Grafana package for this platform
-  ansible.builtin.include_tasks: "install-{{ ansible_facts.os_family }}.yml"
+- name: ALLOY | Install Grafana Alloy
+  ansible.builtin.import_tasks: install.yml
 
 - name: ALLOY | Restrict writes to the configuration directory
   become: true

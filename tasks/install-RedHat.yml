@@ -15,6 +15,13 @@
     enabled: true
     mode: '0644'
 
+- name: ALLOY | Check whether DNF can read the configured repository
+  ansible.builtin.stat:
+    path: /etc/yum.repos.d/grafana.repo
+    get_checksum: false
+    get_mime: false
+  register: __alloy_dnf_source
+
 - name: ALLOY | Install Alloy from the Grafana DNF repository
   become: true
   become_user: root
@@ -23,3 +30,4 @@
     state: present
     disablerepo: '*'
     enablerepo: grafana
+  when: __alloy_dnf_source.stat.exists

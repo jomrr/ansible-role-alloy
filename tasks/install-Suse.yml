@@ -10,6 +10,13 @@
     repo: https://rpm.grafana.com
     autorefresh: true
     disable_gpg_check: false
+  register: __alloy_zypper_repository
+
+- name: ALLOY | Predict registration of the Grafana repository in check mode
+  community.general.zypper_repository_info:
+  register: __alloy_zypper_preview
+  changed_when: "'grafana' not in __alloy_zypper_preview.repodatalist | map(attribute='alias')"
+  when: __alloy_zypper_repository is skipped
 
 - name: ALLOY | Install Alloy from the Grafana Zypper repository
   become: true
@@ -18,3 +25,4 @@
     name: alloy
     state: present
     extra_args: --repo grafana
+  when: __alloy_zypper_preview is not changed

@@ -2,6 +2,20 @@
 # role: alloy
 # file: tasks/install-Debian.yml
 
+- name: ALLOY | Install the Python library for Deb822 repositories
+  become: true
+  become_user: root
+  ansible.builtin.apt:
+    name: python3-debian
+    state: present
+
+- name: ALLOY | Check whether the Deb822 library is available after installation
+  ansible.builtin.stat:
+    path: /usr/lib/python3/dist-packages/debian/deb822.py
+    get_checksum: false
+    get_mime: false
+  register: __alloy_deb822_library
+
 - name: ALLOY | Configure the signed Grafana APT repository
   become: true
   become_user: root
@@ -11,8 +25,16 @@
     suites: stable
     components: main
     signed_by: https://apt.grafana.com/gpg.key
-    install_python_debian: true
   register: __alloy_apt_repository
+  when: __alloy_deb822_library.stat.exists
+
+- name: ALLOY | Check whether APT can read the configured repository
+  ansible.builtin.stat:
+    path: "{{ __alloy_apt_repository.dest }}"
+    get_checksum: false
+    get_mime: false
+  register: __alloy_apt_source
+  when: __alloy_apt_repository is not skipped
 
 - name: ALLOY | Prefer the Grafana build of Alloy
   become: true
@@ -34,3 +56,6 @@
     state: present
     update_cache: "{{ __alloy_apt_repository.changed }}"
     policy_rc_d: 101
+  when:
+    - __alloy_apt_source is not skipped
+    - __alloy_apt_source.stat.exists

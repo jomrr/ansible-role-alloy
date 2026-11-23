@@ -65,8 +65,10 @@ alloy_reporting_enabled: false
 
 ## Check Mode
 
-Use check mode after initial provisioning. A first installation needs the
-package's validator, service account and systemd unit.
+The install entry point supports check mode on new and provisioned hosts. When
+the Grafana repository is still pending, the dry run reports its prerequisites
+and defers package resolution. Use check mode for the full role after initial
+provisioning.
 
 ## Service Behavior
 
@@ -104,6 +106,21 @@ configuration leaves a running service undisturbed. The service starts on boot.
 | Debian | Ubuntu | latest | [jomrr/molecule-ubuntu:latest](https://hub.docker.com/r/jomrr/molecule-ubuntu) |
 
 ## Example Playbook
+
+### Install Alloy for a separately managed service
+
+Install the package and its account. The caller manages the service.
+
+```yaml
+- name: Install Grafana Alloy
+  hosts: telemetry
+  gather_facts: true
+  tasks:
+    - name: Install the Alloy package
+      ansible.builtin.import_role:
+        name: jomrr.alloy
+        tasks_from: install
+```
 
 ### Run Alloy locally
 
