@@ -1,0 +1,37 @@
+---
+# role: alloy
+# file: tasks/install-apt.yml
+
+- name: install-apt | Look up available versions of {{ __alloy_apt_packages | first }}
+  ansible.builtin.command:
+    argv: [apt-cache, madison, "{{ __alloy_apt_packages | first }}"]
+  check_mode: false
+  register: __alloy_apt_versions
+  changed_when: false
+  failed_when: __alloy_apt_versions.rc != 0
+
+- name: install-apt | Refresh missing or changed APT indexes
+  become: true
+  become_user: root
+  ansible.builtin.apt:
+    update_cache: true
+  when: __alloy_apt_refresh or __alloy_apt_archive not in __alloy_apt_versions.stdout
+
+# A simulated refresh leaves the index unchanged. Verify newly fetched versions
+# only after a real refresh, so unavailable packages still fail the installation.
+- name: install-apt | Verify the refreshed index offers {{ __alloy_apt_packages | first }}
+  ansible.builtin.command:
+    argv: [apt-cache, madison, "{{ __alloy_apt_packages | first }}"]
+  register: __alloy_apt_refreshed_versions
+  changed_when: false
+  failed_when: __alloy_apt_refreshed_versions.rc != 0 or __alloy_apt_archive not in __alloy_apt_refreshed_versions.stdout
+  when: __alloy_apt_archive not in __alloy_apt_versions.stdout
+
+- name: install-apt | Install packages from the available index
+  become: true
+  become_user: root
+  ansible.builtin.apt:
+    name: "{{ __alloy_apt_packages }}"
+    state: present
+    policy_rc_d: 101
+  when: __alloy_apt_archive in __alloy_apt_versions.stdout or __alloy_apt_refreshed_versions is not skipped

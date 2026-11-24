@@ -7,11 +7,58 @@
 
 - name: ALLOY | Exercise the standalone installer on fresh hosts
   hosts: all
-  gather_facts: true
+  gather_facts: false
   vars:
     # The standalone installer must not validate or deploy a pipeline.
     alloy_config: 'not a valid Alloy configuration'
   tasks:
+    - name: ALLOY | Empty the Debian test container's package lists
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: /var/lib/apt/lists
+        state: absent
+      when: ansible_facts.distribution == 'Debian'
+
+    - name: ALLOY | Provide an empty directory for Debian package lists
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: /var/lib/apt/lists
+        state: directory
+        mode: '0755'
+      when: ansible_facts.distribution == 'Debian'
+
+    - name: ALLOY | Leave Ubuntu with a configured Grafana source and no vendor index
+      become: true
+      become_user: root
+      ansible.builtin.deb822_repository:
+        name: grafana
+        uris: https://apt.grafana.com
+        suites: stable
+        components: main
+        signed_by: https://apt.grafana.com/gpg.key
+        install_python_debian: true
+      when: ansible_facts.distribution == 'Ubuntu'
+
+    - name: ALLOY | Seed a disabled and misconfigured Grafana repository on openSUSE
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        dest: /etc/zypp/repos.d/grafana.repo
+        mode: '0644'
+        content: |
+          [grafana]
+          name=Grafana
+          baseurl=file:///missing-alloy-molecule-repository
+          enabled=0
+          autorefresh=0
+          gpgcheck=0
+      when: ansible_facts.os_family == 'Suse'
+
+    - name: ALLOY | Clear cached facts before calling the standalone installer
+      ansible.builtin.meta: clear_facts
+
     - name: ALLOY | Preview installation
       ansible.builtin.include_role:
         name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
@@ -29,6 +76,19 @@
         that: not __alloy_preview_binary.stat.exists
         quiet: true
 
+    - name: ALLOY | Look for Grafana indexes after the dry run
+      ansible.builtin.find:
+        paths: /var/lib/apt/lists
+        patterns: 'apt.grafana.com_*'
+      register: __alloy_preview_indexes
+      when: ansible_facts.os_family == 'Debian'
+
+    - name: ALLOY | Verify the dry run deferred the APT index update
+      ansible.builtin.assert:
+        that: __alloy_preview_indexes.matched == 0
+        quiet: true
+      when: ansible_facts.os_family == 'Debian'
+
     - name: ALLOY | Install the package without configuring the collector
       ansible.builtin.include_role:
         name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
@@ -36,7 +96,9 @@
 
     - name: ALLOY | Run the installed binary
       ansible.builtin.command: /usr/bin/alloy --version
+      register: __alloy_installed_version
       changed_when: false
+      failed_when: __alloy_installed_version.rc != 0
 
     - name: ALLOY | Look up the packaged service account
       ansible.builtin.getent:

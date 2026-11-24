@@ -2,6 +2,9 @@
 # role: alloy
 # file: defaults/main.yml
 
+# Back up managed configuration files before replacing them.
+alloy_backup: true
+
 # Complete configuration file in native Alloy syntax.
 alloy_config: 'prometheus.exporter.self "local" {}'
 

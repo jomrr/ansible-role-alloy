@@ -1,0 +1,14 @@
+---
+# role: alloy
+# file: vars/main.yml
+
+__alloy_required_facts:
+  - os_family
+
+__alloy_required_facts_subsets:
+  - '!all'
+  - '!min'
+  - distribution
+
+__alloy_validate_config: /usr/bin/alloy validate %s
+__alloy_rpm_repository_url: https://rpm.grafana.com

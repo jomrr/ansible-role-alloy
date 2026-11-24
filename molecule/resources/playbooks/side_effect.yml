@@ -21,6 +21,13 @@
         dest: /var/log/alloy-molecule.log
         mode: '0644'
 
+    - name: ALLOY | Record the current pipeline checksum
+      become: true
+      become_user: root
+      ansible.builtin.stat:
+        path: /etc/alloy/config.alloy
+      register: __alloy_previous_pipeline
+
     - name: ALLOY | Configure a local file-to-journal pipeline
       ansible.builtin.include_role:
         name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
@@ -36,15 +43,47 @@
           - --no-pager
       changed_when: false
       register: __alloy_journal
+      failed_when: __alloy_journal.rc != 0
       until: __alloy_journal.rc == 0
       retries: 30
       delay: 2
 
-    - name: ALLOY | Opt in to anonymous usage reporting
+    - name: ALLOY | Read the backups after changing the pipeline
+      become: true
+      become_user: root
+      ansible.builtin.find:
+        paths: /etc/alloy
+        patterns: 'config.alloy.*~'
+        get_checksum: true
+      register: __alloy_pipeline_backups
+
+    - name: ALLOY | Verify the previous pipeline was backed up
+      ansible.builtin.assert:
+        that: __alloy_previous_pipeline.stat.checksum in __alloy_pipeline_backups.files | map(attribute='checksum')
+        quiet: true
+
+    - name: ALLOY | Opt in to anonymous usage reporting without backing up the next pipeline
       ansible.builtin.include_role:
         name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
       vars:
         alloy_reporting_enabled: true
+        alloy_config: 'prometheus.exporter.self "restored" {}'
+        alloy_backup: false
+
+    - name: ALLOY | Read the backups after replacing the pipeline with backups disabled
+      become: true
+      become_user: root
+      ansible.builtin.find:
+        paths: /etc/alloy
+        patterns: 'config.alloy.*~'
+      register: __alloy_opt_out_backups
+
+    - name: ALLOY | Verify the second replacement kept the same backups
+      ansible.builtin.assert:
+        that: >-
+          __alloy_opt_out_backups.files | map(attribute='path') | sort ==
+          __alloy_pipeline_backups.files | map(attribute='path') | sort
+        quiet: true
 
     - name: ALLOY | Read the current service invocation
       ansible.builtin.systemd_service:
@@ -65,6 +104,7 @@
           - --no-pager
       changed_when: false
       register: __alloy_reporter
+      failed_when: __alloy_reporter.rc != 0
       until: __alloy_reporter.rc == 0
       retries: 30
       delay: 2

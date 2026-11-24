@@ -42,4 +42,6 @@
           - --
           - --disable-reporting
           - /proc/{{ __alloy_unit.status.MainPID }}/cmdline
+      register: __alloy_reporting_flag
       changed_when: false
+      failed_when: __alloy_reporting_flag.rc != 0

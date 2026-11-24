@@ -2,7 +2,10 @@
 # role: alloy
 # file: tasks/install.yml
 
-- name: ALLOY | Trust the Grafana RPM signing key
+- name: install | Gather required platform facts
+  ansible.builtin.import_tasks: set_vars.yml
+
+- name: install | Trust the Grafana RPM signing key
   become: true
   become_user: root
   ansible.builtin.rpm_key:
@@ -11,5 +14,5 @@
     state: present
   when: ansible_facts.os_family in ['RedHat', 'Suse']
 
-- name: ALLOY | Install the official Grafana package for this platform
+- name: install | Install the official Grafana package for this platform
   ansible.builtin.include_tasks: "install-{{ ansible_facts.os_family }}.yml"

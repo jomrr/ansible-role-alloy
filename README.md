@@ -34,6 +34,18 @@ collections:
 
 ## Role Variables
 
+### `alloy_backup`
+
+Type: `bool`. Required: `false`.
+
+Back up managed configuration files before replacing them.
+
+Default:
+
+```yaml
+alloy_backup: true
+```
+
 ### `alloy_config`
 
 Type: `str`. Required: `false`.
@@ -66,9 +78,9 @@ alloy_reporting_enabled: false
 ## Check Mode
 
 The install entry point supports check mode on new and provisioned hosts. When
-the Grafana repository is still pending, the dry run reports its prerequisites
-and defers package resolution. Use check mode for the full role after initial
-provisioning.
+package indexes or the Grafana repository are pending, the dry run reports the
+required changes and defers package resolution. Use check mode for the full role
+after initial provisioning.
 
 ## Service Behavior
 
@@ -82,6 +94,8 @@ configuration leaves a running service undisturbed. The service starts on boot.
 - The role disables anonymous usage reporting with `--disable-reporting`. Set
   `alloy_reporting_enabled: true` to opt in. Changing this setting restarts
   Alloy.
+- Backups of replaced pipeline files can contain credentials from earlier
+  configurations. Set `alloy_backup: false` to disable new backups.
 - Root owns the configuration file and the alloy group can read it. Store
   credentials supplied through inventory in Ansible Vault.
 - Alloy runs as the alloy user with a read-only system filesystem. Place
@@ -114,7 +128,7 @@ Install the package and its account. The caller manages the service.
 ```yaml
 - name: Install Grafana Alloy
   hosts: telemetry
-  gather_facts: true
+  gather_facts: false
   tasks:
     - name: Install the Alloy package
       ansible.builtin.import_role:
@@ -129,7 +143,7 @@ Check readiness with `curl http://127.0.0.1:12345/-/ready`.
 ```yaml
 - name: Run Grafana Alloy
   hosts: telemetry
-  gather_facts: true
+  gather_facts: false
   roles:
     - role: jomrr.alloy
 ```
@@ -141,7 +155,7 @@ Replace the example URL with a Prometheus-compatible remote write endpoint.
 ```yaml
 - name: Forward collector metrics
   hosts: telemetry
-  gather_facts: true
+  gather_facts: false
   roles:
     - role: jomrr.alloy
       alloy_config: |

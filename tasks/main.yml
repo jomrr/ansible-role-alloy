@@ -2,10 +2,13 @@
 # role: alloy
 # file: tasks/main.yml
 
-- name: ALLOY | Install Grafana Alloy
+- name: Gather required platform facts
+  ansible.builtin.import_tasks: set_vars.yml
+
+- name: Install Grafana Alloy
   ansible.builtin.import_tasks: install.yml
 
-- name: ALLOY | Restrict writes to the configuration directory
+- name: Restrict writes to the configuration directory
   become: true
   become_user: root
   ansible.builtin.file:
@@ -15,7 +18,7 @@
     group: alloy
     mode: '0750'
 
-- name: ALLOY | Validate and install the collector configuration
+- name: Validate and install the collector configuration
   become: true
   become_user: root
   ansible.builtin.template:
@@ -24,12 +27,13 @@
     owner: root
     group: alloy
     mode: '0640'
-    validate: /usr/bin/alloy validate %s
+    backup: "{{ alloy_backup }}"
+    validate: "{{ __alloy_validate_config }}"
   no_log: true
   diff: false
   notify: ALLOY | Apply service changes
 
-- name: ALLOY | Create the systemd drop-in directory
+- name: Create the systemd drop-in directory
   become: true
   become_user: root
   ansible.builtin.file:
@@ -39,14 +43,14 @@
     group: root
     mode: '0755'
 
-- name: ALLOY | Identify packages using the Alloy startup wrapper
+- name: Identify packages using the Alloy startup wrapper
   ansible.builtin.stat:
     path: /usr/lib/alloy/alloy-wrapper
     get_checksum: false
     get_mime: false
   register: __alloy_wrapper
 
-- name: ALLOY | Install the systemd sandbox and usage reporting policy
+- name: Install the systemd sandbox and usage reporting policy
   become: true
   become_user: root
   ansible.builtin.template:
@@ -55,13 +59,14 @@
     owner: root
     group: root
     mode: '0644'
+    backup: "{{ alloy_backup }}"
   register: __alloy_dropin
   notify: ALLOY | Apply service changes
 
-- name: ALLOY | Apply the configuration before enforcing the service state
+- name: Apply the configuration before enforcing the service state
   ansible.builtin.meta: flush_handlers
 
-- name: ALLOY | Enable and start Alloy
+- name: Enable and start Alloy
   become: true
   become_user: root
   ansible.builtin.systemd_service:

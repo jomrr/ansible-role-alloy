@@ -2,23 +2,31 @@
 # role: alloy
 # file: tasks/install-Suse.yml
 
-- name: ALLOY | Configure the signed Grafana Zypper repository
+- name: install-Suse | Configure the signed Grafana Zypper repository
   become: true
   become_user: root
   community.general.zypper_repository:
     name: grafana
-    repo: https://rpm.grafana.com
+    repo: "{{ __alloy_rpm_repository_url }}"
+    enabled: true
     autorefresh: true
     disable_gpg_check: false
   register: __alloy_zypper_repository
 
-- name: ALLOY | Predict registration of the Grafana repository in check mode
+- name: install-Suse | Check the effective Grafana repository in check mode
   community.general.zypper_repository_info:
   register: __alloy_zypper_preview
-  changed_when: "'grafana' not in __alloy_zypper_preview.repodatalist | map(attribute='alias')"
+  changed_when: >-
+    not (__alloy_zypper_preview.repodatalist
+         | selectattr('alias', 'equalto', 'grafana')
+         | selectattr('url', 'in', [__alloy_rpm_repository_url, __alloy_rpm_repository_url ~ '/'])
+         | selectattr('enabled', 'equalto', '1')
+         | selectattr('autorefresh', 'equalto', '1')
+         | selectattr('gpgcheck', 'equalto', '1')
+         | list)
   when: __alloy_zypper_repository is skipped
 
-- name: ALLOY | Install Alloy from the Grafana Zypper repository
+- name: install-Suse | Install Alloy from the Grafana Zypper repository
   become: true
   become_user: root
   community.general.zypper:

@@ -2,8 +2,11 @@
 # role: alloy
 # file: molecule/resources/playbooks/converge.yml
 
-- name: "Molecule | converge | alloy"
+- name: ALLOY | Configure Alloy without play-level facts
   hosts: all
-  gather_facts: true
+  gather_facts: false
+  pre_tasks:
+    - name: ALLOY | Clear cached facts before applying the full role
+      ansible.builtin.meta: clear_facts
   roles:
     - role: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"

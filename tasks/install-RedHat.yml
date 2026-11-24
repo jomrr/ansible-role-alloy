@@ -2,27 +2,27 @@
 # role: alloy
 # file: tasks/install-RedHat.yml
 
-- name: ALLOY | Configure the signed Grafana DNF repository
+- name: install-RedHat | Configure the signed Grafana DNF repository
   become: true
   become_user: root
   ansible.builtin.yum_repository:
     name: grafana
     description: Grafana Labs
-    baseurl: https://rpm.grafana.com
+    baseurl: "{{ __alloy_rpm_repository_url }}"
     gpgkey: https://rpm.grafana.com/gpg.key
     gpgcheck: true
     repo_gpgcheck: true
     enabled: true
     mode: '0644'
 
-- name: ALLOY | Check whether DNF can read the configured repository
+- name: install-RedHat | Check whether DNF can read the configured repository
   ansible.builtin.stat:
     path: /etc/yum.repos.d/grafana.repo
     get_checksum: false
     get_mime: false
   register: __alloy_dnf_source
 
-- name: ALLOY | Install Alloy from the Grafana DNF repository
+- name: install-RedHat | Install Alloy from the Grafana DNF repository
   become: true
   become_user: root
   ansible.builtin.dnf:
