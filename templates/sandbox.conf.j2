@@ -1,6 +1,7 @@
 # Managed by ansible.
 # file: {{ template_destpath }}
 [Service]
+SyslogIdentifier=alloy
 {% if not (alloy_reporting_enabled | bool) %}
 ExecStart=
 {% if __alloy_wrapper.stat.exists %}

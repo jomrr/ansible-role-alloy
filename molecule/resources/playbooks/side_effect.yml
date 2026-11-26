@@ -32,13 +32,14 @@
       ansible.builtin.include_role:
         name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
 
-    - name: ALLOY | Wait for Alloy to emit the entry into its own journal
+    - name: Wait for the pipeline entry in the journal under the alloy identifier
       become: true
       become_user: root
       ansible.builtin.command:
         argv:
           - journalctl
           - --unit=alloy.service
+          - --identifier=alloy
           - --grep=alloy-molecule-{{ ansible_facts.date_time.epoch }}
           - --no-pager
       changed_when: false
@@ -92,13 +93,14 @@
       check_mode: true
       register: __alloy_opt_in_unit
 
-    - name: ALLOY | Verify the opted-in collector starts its usage reporter
+    - name: Verify the opted-in usage reporter logs under the alloy identifier
       become: true
       become_user: root
       ansible.builtin.command:
         argv:
           - journalctl
           - --unit=alloy.service
+          - --identifier=alloy
           - _SYSTEMD_INVOCATION_ID={{ __alloy_opt_in_unit.status.InvocationID }}
           - --grep=running usage stats reporter
           - --no-pager
